@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "noEmit": true,
+    "outDir": "./build",
     "strict": true,
 
     "noUnusedLocals": true,

@@ -17,7 +17,12 @@
   },
   "homepage": "https://github.com/desmosinc/pratt-parser-blog-code#readme",
   "devDependencies": {
+    "@types/codemirror": "0.0.70",
+    "fuse-box": "^3.6.0",
     "ts-node": "^7.0.1",
     "typescript": "^3.2.2"
+  },
+  "dependencies": {
+    "codemirror": "^5.42.0"
   }
 }
