@@ -7,8 +7,19 @@ ___scope___.file("src/index.js", function(exports, require, module, __filename, 
 Object.defineProperty(exports, "__esModule", { value: true });
 const lexer_1 = require("./lexer");
 const editor_1 = require("./editor");
-console.log(lexer_1.getTokens('1 + 2 * (3 / 4)'));
-editor_1.create(document.body);
+const cmContainer = document.createElement('div');
+cmContainer.className = "cm-container";
+document.body.appendChild(cmContainer);
+const cm = editor_1.create(cmContainer);
+const outputContainer = document.createElement('pre');
+outputContainer.className = "output-container";
+document.body.appendChild(outputContainer);
+function updateOutput() {
+    const tokens = lexer_1.getTokens(cm.getDoc().getValue());
+    outputContainer.innerHTML = 'tokens: ' + JSON.stringify(tokens, null, 2);
+}
+cm.on('change', updateOutput);
+updateOutput();
 
 });
 ___scope___.file("src/lexer.js", function(exports, require, module, __filename, __dirname){
