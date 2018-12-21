@@ -1,0 +1,23 @@
+{
+  "name": "pratt-parser-blog-code",
+  "version": "1.0.0",
+  "description": "The code to illustrate the pratt parser blog post for the desmos engineering blog.",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx ts-node src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/desmosinc/pratt-parser-blog-code.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/desmosinc/pratt-parser-blog-code/issues"
+  },
+  "homepage": "https://github.com/desmosinc/pratt-parser-blog-code#readme",
+  "devDependencies": {
+    "ts-node": "^7.0.1",
+    "typescript": "^3.2.2"
+  }
+}
