@@ -7,16 +7,20 @@ ___scope___.file("src/index.js", function(exports, require, module, __filename, 
 Object.defineProperty(exports, "__esModule", { value: true });
 const lexer_1 = require("./lexer");
 const editor_1 = require("./editor");
+const parser_1 = require("./parser");
 const cmContainer = document.createElement('div');
-cmContainer.className = "cm-container";
+cmContainer.className = 'cm-container';
 document.body.appendChild(cmContainer);
 const cm = editor_1.create(cmContainer);
 const outputContainer = document.createElement('pre');
-outputContainer.className = "output-container";
+outputContainer.className = 'output-container';
 document.body.appendChild(outputContainer);
 function updateOutput() {
+    const ast = parser_1.parse(cm.getDoc().getValue());
     const tokens = lexer_1.getTokens(cm.getDoc().getValue());
-    outputContainer.innerHTML = 'tokens: ' + JSON.stringify(tokens, null, 2);
+    outputContainer.innerHTML = `\
+ast: ${JSON.stringify(ast, null, 2)}
+tokens: ${JSON.stringify(tokens, null, 2)}`;
 }
 cm.on('change', updateOutput);
 updateOutput();
@@ -66,7 +70,7 @@ function makeEmit(stream, state) {
             first_column: stream.start,
             last_column: stream.pos,
             line: state.line,
-            text: stream.current()
+            text: stream.current(),
         };
     };
 }
@@ -88,32 +92,14 @@ function getDefaultToken(stream, state) {
     if (stream.match(/\//)) {
         return emitToken('/');
     }
+    if (stream.match(/\^/)) {
+        return emitToken('^');
+    }
     if (stream.match(/\(/)) {
         return emitToken('(');
     }
     if (stream.match(/\)/)) {
         return emitToken(')');
-    }
-    if (stream.match(/=/)) {
-        return emitToken('=');
-    }
-    if (stream.match(/,/)) {
-        return emitToken(',');
-    }
-    if (stream.match(/>=/)) {
-        return emitToken('>=');
-    }
-    if (stream.match(/<=/)) {
-        return emitToken('<=');
-    }
-    if (stream.match(/>/)) {
-        return emitToken('>');
-    }
-    if (stream.match(/</)) {
-        return emitToken('<');
-    }
-    if (stream.match(/[a-zA-Z_][a-zA-Z0-9_]*/)) {
-        return emitToken('IDENTIFIER');
     }
     if (stream.match(/-?[0-9]+(\.[0-9]+)?/)) {
         return emitToken('NUMBER');
@@ -470,8 +456,6 @@ function MakeMode(_config, _modeOptions) {
             }
             const type = token.type;
             switch (type) {
-                case 'IDENTIFIER':
-                    return 'variable';
                 case 'NUMBER':
                     return 'number';
                 case '(':
@@ -482,7 +466,7 @@ function MakeMode(_config, _modeOptions) {
                 case '*':
                 case '/':
                 case '=':
-                case ',':
+                case '^':
                 case '>=':
                 case '<=':
                 case '>':
@@ -507,6 +491,242 @@ function assertUnreachable(x) {
     throw new Error(`Didn't expect to get here ${x}`);
 }
 CM.defineMode('test', MakeMode);
+
+});
+___scope___.file("src/parser.js", function(exports, require, module, __filename, __dirname){
+
+"use strict";
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const Parselet = __importStar(require("./parselet"));
+const tokenstream_1 = require("./tokenstream");
+function parse(text) {
+    const nodes = [];
+    const tokens = new tokenstream_1.TokenStream(text);
+    const parser = new Parser();
+    while (tokens.peek()) {
+        try {
+            nodes.push(parser.parse(tokens, 0));
+        }
+        catch (e) {
+            return {
+                nodes,
+                errors: [e.message],
+            };
+        }
+    }
+    return { nodes, errors: [] };
+}
+exports.parse = parse;
+class AbstractParser {
+    constructor() {
+        this.bindingPowers = {};
+        const bindingClasses = this.bindingClasses();
+        for (let i = 0; i < bindingClasses.length; i++) {
+            for (const tokenType of bindingClasses[i]) {
+                this.bindingPowers[tokenType] = 10 * i + 9;
+            }
+        }
+        for (const tokenType of Object.keys(this.infixMap)) {
+            if (this.bindingPowers[tokenType] == undefined) {
+                throw new Error(`Token ${tokenType} defined in infixMap has no associated binding power.
+          Make sure it is also listed in bindingClasses.`);
+            }
+        }
+    }
+    bindingPower(tokenType) {
+        if (this.bindingPowers[tokenType] != undefined) {
+            return this.bindingPowers[tokenType];
+        }
+        else {
+            throw new Error(`Tried to parse token type ${tokenType} with a parser that does not have it defined.`);
+        }
+    }
+    parse(tokens, bindingPower) {
+        const token = tokens.consume();
+        if (!token) {
+            throw new Error(`Expected a start of an expression but ran out of tokens: ${JSON.stringify(tokens.last())}`);
+        }
+        const prefixParselet = this.prefixMap()[token.type];
+        if (!prefixParselet) {
+            throw new Error(`Expected a start of an expression but found "${token.text}": ${JSON.stringify(token)}`);
+        }
+        let left = prefixParselet.parse(this, tokens, token);
+        while (true) {
+            const next = tokens.peek();
+            if (!next) {
+                break;
+            }
+            const infixParselet = this.infixMap()[next.type];
+            if (!infixParselet) {
+                break;
+            }
+            if (bindingPower >= this.bindingPower(next.type)) {
+                break;
+            }
+            tokens.consume();
+            left = infixParselet.parse(this, tokens, left, next);
+        }
+        return left;
+    }
+}
+exports.AbstractParser = AbstractParser;
+class Parser extends AbstractParser {
+    prefixMap() {
+        return {
+            NUMBER: new Parselet.NumberParselet(),
+            '(': new Parselet.ParenParselet(),
+        };
+    }
+    infixMap() {
+        return {
+            '+': new Parselet.BinaryOperatorParselet('+', 'left'),
+            '-': new Parselet.BinaryOperatorParselet('-', 'left'),
+            '*': new Parselet.BinaryOperatorParselet('*', 'left'),
+            '/': new Parselet.BinaryOperatorParselet('/', 'left'),
+            '^': new Parselet.BinaryOperatorParselet('^', 'right'),
+        };
+    }
+    bindingClasses() {
+        const classes = [
+            ['+', '-'],
+            ['*', '/'],
+            ['^']
+        ];
+        return classes;
+    }
+}
+exports.Parser = Parser;
+
+});
+___scope___.file("src/parselet.js", function(exports, require, module, __filename, __dirname){
+
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const position_1 = require("./position");
+class NumberParselet {
+    parse(_parser, _tokens, token) {
+        return {
+            type: 'Number',
+            value: parseFloat(token.text),
+            pos: position_1.token2pos(token)
+        };
+    }
+}
+exports.NumberParselet = NumberParselet;
+class BooleanParselet {
+    constructor(value) {
+        this.value = value;
+    }
+    parse(_parser, _tokens, token) {
+        return {
+            type: 'Boolean',
+            value: this.value,
+            pos: position_1.token2pos(token)
+        };
+    }
+}
+exports.BooleanParselet = BooleanParselet;
+class ParenParselet {
+    parse(parser, tokens, _token) {
+        const exp = parser.parse(tokens, 0);
+        tokens.expectToken(')');
+        return exp;
+    }
+}
+exports.ParenParselet = ParenParselet;
+class InfixParselet {
+    constructor(tokenType, associativity) {
+        this.tokenType = tokenType;
+        this.associativity = associativity;
+    }
+}
+exports.InfixParselet = InfixParselet;
+class BinaryOperatorParselet extends InfixParselet {
+    constructor(tokenType, associativity) {
+        super(tokenType, associativity);
+        this.tokenType = tokenType;
+    }
+    parse(parser, tokens, left, _token) {
+        const precedence = parser.bindingPower(this.tokenType);
+        const right = parser.parse(tokens, this.associativity == 'left' ? precedence : precedence - 1);
+        return {
+            type: 'BinaryOperation',
+            operator: this.tokenType,
+            left,
+            right,
+            pos: position_1.join(left.pos, position_1.token2pos(tokens.last()))
+        };
+    }
+}
+exports.BinaryOperatorParselet = BinaryOperatorParselet;
+
+});
+___scope___.file("src/position.js", function(exports, require, module, __filename, __dirname){
+
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+function token2pos(token) {
+    return {
+        first_line: token.line,
+        last_line: token.line,
+        first_column: token.first_column,
+        last_column: token.last_column
+    };
+}
+exports.token2pos = token2pos;
+function join(start, end) {
+    return {
+        first_line: start.first_line,
+        last_line: end.last_line,
+        first_column: start.first_column,
+        last_column: end.last_column
+    };
+}
+exports.join = join;
+
+});
+___scope___.file("src/tokenstream.js", function(exports, require, module, __filename, __dirname){
+
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const lexer_1 = require("./lexer");
+class TokenStream {
+    constructor(text) {
+        this.pos = 0;
+        this.tokens = lexer_1.getTokens(text).filter(t => t.type != 'COMMENT');
+    }
+    consume() {
+        const token = this.tokens[this.pos];
+        if (token) {
+            this.pos += 1;
+        }
+        return token;
+    }
+    peek() {
+        return this.tokens[this.pos];
+    }
+    last() {
+        return this.tokens[this.pos - 1];
+    }
+    expectToken(expectedType) {
+        const actual = this.consume();
+        if (!actual) {
+            throw new Error(`Expected _${expectedType}_ token but found none. ${JSON.stringify(this.last())}`);
+        }
+        if (actual.type != expectedType) {
+            throw new Error(`Expected _${expectedType}_ token but found _${actual.type}_. ${JSON.stringify(actual)}`);
+        }
+        return actual;
+    }
+}
+exports.TokenStream = TokenStream;
 
 });
 return ___scope___.entry = "src/index.js";
