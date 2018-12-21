@@ -16,7 +16,9 @@ const fuse = FuseBox.init({
       }),
       CSSPlugin(),
     ],
-    WebIndexPlugin(),
+    WebIndexPlugin({
+      path: "."
+    }),
   ],
 });
 fuse.dev(); // launch http server
