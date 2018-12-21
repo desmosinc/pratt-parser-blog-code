@@ -27,9 +27,6 @@ export function MakeMode(_config: CodeMirror.EditorConfiguration, _modeOptions?:
 
       const type = token.type;
       switch (type) {
-        case 'IDENTIFIER':
-          return 'variable';
-
         case 'NUMBER':
           return 'number';
 
@@ -42,7 +39,7 @@ export function MakeMode(_config: CodeMirror.EditorConfiguration, _modeOptions?:
         case '*':
         case '/':
         case '=':
-        case ',':
+        case '^':
         case '>=':
         case '<=':
         case '>':

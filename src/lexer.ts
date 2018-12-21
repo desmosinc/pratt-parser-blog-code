@@ -1,8 +1,8 @@
-import StringStream from './StringStream'
+import StringStream from './StringStream';
 
 export function getTokens(text: string): Token[] {
   const tokens: Token[] = [];
-  const state: State = { line: 1, stack: ['default'] };
+  const state: State = {line: 1, stack: ['default']};
 
   for (const line of text.split('\n')) {
     const stream = new StringStream(line);
@@ -16,7 +16,7 @@ export function getTokens(text: string): Token[] {
         throw new Error(
           `getToken failed to advance stream at position ${
             stream.pos
-          } in string ${stream.string}`
+          } in string ${stream.string}`,
         );
       }
       stream.start = stream.pos;
@@ -30,7 +30,7 @@ export function getTokens(text: string): Token[] {
 
 export function getToken(
   stream: StringStream,
-  state: State
+  state: State,
 ): Token | undefined {
   //Built for codeMirror streams API
   //State is a stack of states
@@ -47,14 +47,14 @@ function makeEmit(stream: StringStream, state: State) {
       first_column: stream.start,
       last_column: stream.pos,
       line: state.line,
-      text: stream.current()
+      text: stream.current(),
     };
   };
 }
 
 function getDefaultToken(
   stream: StringStream,
-  state: State
+  state: State,
 ): Token | undefined {
   const emitToken = makeEmit(stream, state);
   if (stream.eatSpace()) {
@@ -78,40 +78,16 @@ function getDefaultToken(
     return emitToken('/');
   }
 
+  if (stream.match(/\^/)) {
+    return emitToken('^');
+  }
+
   if (stream.match(/\(/)) {
     return emitToken('(');
   }
 
   if (stream.match(/\)/)) {
     return emitToken(')');
-  }
-
-  if (stream.match(/=/)) {
-    return emitToken('=');
-  }
-
-  if (stream.match(/,/)) {
-    return emitToken(',');
-  }
-
-  if (stream.match(/>=/)) {
-    return emitToken('>=');
-  }
-
-  if (stream.match(/<=/)) {
-    return emitToken('<=');
-  }
-
-  if (stream.match(/>/)) {
-    return emitToken('>');
-  }
-
-  if (stream.match(/</)) {
-    return emitToken('<');
-  }
-
-  if (stream.match(/[a-zA-Z_][a-zA-Z0-9_]*/)) {
-    return emitToken('IDENTIFIER');
   }
 
   if (stream.match(/-?[0-9]+(\.[0-9]+)?/)) {
@@ -130,21 +106,18 @@ function getDefaultToken(
   return emitToken('ERROR');
 }
 
-export type TokenType =
-  | 'NUMBER'
-  | 'IDENTIFIER'
+export type BinaryOperationTokenType =
   | '+'
   | '-'
   | '*'
   | '/'
+  | '^'
+
+export type TokenType =
+  | BinaryOperationTokenType
+  | 'NUMBER'
   | '('
   | ')'
-  | '='
-  | ','
-  | '>='
-  | '<='
-  | '>'
-  | '<'
   | 'COMMENT'
   | 'ERROR';
 
