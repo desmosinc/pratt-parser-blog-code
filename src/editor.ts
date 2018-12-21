@@ -1,5 +1,6 @@
 import CM from 'codemirror';
 import '../node_modules/codemirror/lib/codemirror.css';
+import './mode'
 
 export function create(
   node: HTMLElement

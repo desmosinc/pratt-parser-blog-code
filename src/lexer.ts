@@ -156,7 +156,7 @@ export interface Token<T extends TokenType = TokenType> {
   last_column: number;
 }
 
-type Mode = 'default' | 'comment';
+type Mode = 'default';
 
 export interface State {
   stack: Mode[];
