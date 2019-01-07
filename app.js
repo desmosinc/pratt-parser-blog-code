@@ -533,9 +533,9 @@ class AbstractParser {
                 this.bindingPowers[tokenType] = 10 * i + 9;
             }
         }
-        for (const tokenType of Object.keys(this.infixMap)) {
+        for (const tokenType of Object.keys(this.consequentMap)) {
             if (this.bindingPowers[tokenType] == undefined) {
-                throw new Error(`Token ${tokenType} defined in infixMap has no associated binding power.
+                throw new Error(`Token ${tokenType} defined in consequentMap has no associated binding power.
           Make sure it is also listed in bindingClasses.`);
             }
         }
@@ -548,43 +548,43 @@ class AbstractParser {
             throw new Error(`Tried to parse token type ${tokenType} with a parser that does not have it defined.`);
         }
     }
-    parse(tokens, bindingPower) {
+    parse(tokens, currentBindingPower) {
         const token = tokens.consume();
         if (!token) {
             throw new Error(`Expected a start of an expression but ran out of tokens: ${JSON.stringify(tokens.last())}`);
         }
-        const prefixParselet = this.prefixMap()[token.type];
-        if (!prefixParselet) {
+        const initialParselet = this.initialMap()[token.type];
+        if (!initialParselet) {
             throw new Error(`Expected a start of an expression but found "${token.text}": ${JSON.stringify(token)}`);
         }
-        let left = prefixParselet.parse(this, tokens, token);
+        let left = initialParselet.parse(this, tokens, token);
         while (true) {
             const next = tokens.peek();
             if (!next) {
                 break;
             }
-            const infixParselet = this.infixMap()[next.type];
-            if (!infixParselet) {
+            const consequentParselet = this.consequentMap()[next.type];
+            if (!consequentParselet) {
                 break;
             }
-            if (bindingPower >= this.bindingPower(next.type)) {
+            if (currentBindingPower >= this.bindingPower(next.type)) {
                 break;
             }
             tokens.consume();
-            left = infixParselet.parse(this, tokens, left, next);
+            left = consequentParselet.parse(this, tokens, left, next);
         }
         return left;
     }
 }
 exports.AbstractParser = AbstractParser;
 class Parser extends AbstractParser {
-    prefixMap() {
+    initialMap() {
         return {
             NUMBER: new Parselet.NumberParselet(),
             '(': new Parselet.ParenParselet(),
         };
     }
-    infixMap() {
+    consequentMap() {
         return {
             '+': new Parselet.BinaryOperatorParselet('+', 'left'),
             '-': new Parselet.BinaryOperatorParselet('-', 'left'),
@@ -641,14 +641,14 @@ class ParenParselet {
     }
 }
 exports.ParenParselet = ParenParselet;
-class InfixParselet {
+class ConsequentParselet {
     constructor(tokenType, associativity) {
         this.tokenType = tokenType;
         this.associativity = associativity;
     }
 }
-exports.InfixParselet = InfixParselet;
-class BinaryOperatorParselet extends InfixParselet {
+exports.ConsequentParselet = ConsequentParselet;
+class BinaryOperatorParselet extends ConsequentParselet {
     constructor(tokenType, associativity) {
         super(tokenType, associativity);
         this.tokenType = tokenType;
