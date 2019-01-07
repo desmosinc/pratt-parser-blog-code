@@ -25,11 +25,11 @@ export function parse(text: string): {nodes: AST.Node[]; errors: string[]} {
 export abstract class AbstractParser {
   public bindingPowers: {[tokenType in TokenType]: number};
 
-  protected abstract prefixMap(): Partial<
-    {[K in TokenType]: Parselet.PrefixParselet}
+  protected abstract initialMap(): Partial<
+    {[K in TokenType]: Parselet.InitialParselet}
   >;
-  protected abstract infixMap(): Partial<
-    {[K in TokenType]: Parselet.InfixParselet}
+  protected abstract consequentMap(): Partial<
+    {[K in TokenType]: Parselet.ConsequentParselet}
   >;
   protected abstract bindingClasses(): TokenType[][];
 
@@ -43,10 +43,10 @@ export abstract class AbstractParser {
       }
     }
 
-    for (const tokenType of Object.keys(this.infixMap) as TokenType[]) {
+    for (const tokenType of Object.keys(this.consequentMap) as TokenType[]) {
       if (this.bindingPowers[tokenType] == undefined) {
         throw new Error(
-          `Token ${tokenType} defined in infixMap has no associated binding power.
+          `Token ${tokenType} defined in consequentMap has no associated binding power.
           Make sure it is also listed in bindingClasses.`,
         );
       }
@@ -63,7 +63,7 @@ export abstract class AbstractParser {
     }
   }
 
-  parse(tokens: TokenStream, bindingPower: number): AST.Node {
+  parse(tokens: TokenStream, currentBindingPower: number): AST.Node {
     const token = tokens.consume();
     if (!token) {
       throw new Error(
@@ -73,9 +73,9 @@ export abstract class AbstractParser {
       );
     }
 
-    const prefixParselet = this.prefixMap()[token.type];
+    const initialParselet = this.initialMap()[token.type];
 
-    if (!prefixParselet) {
+    if (!initialParselet) {
       throw new Error(
         `Expected a start of an expression but found "${
           token.text
@@ -83,7 +83,7 @@ export abstract class AbstractParser {
       );
     }
 
-    let left = prefixParselet.parse(this, tokens, token);
+    let left = initialParselet.parse(this, tokens, token);
 
     while (true) {
       const next = tokens.peek();
@@ -91,18 +91,18 @@ export abstract class AbstractParser {
         break;
       }
 
-      const infixParselet = this.infixMap()[next.type];
+      const consequentParselet = this.consequentMap()[next.type];
 
-      if (!infixParselet) {
+      if (!consequentParselet) {
         break;
       }
 
-      if (bindingPower >= this.bindingPower(next.type)) {
+      if (currentBindingPower >= this.bindingPower(next.type)) {
         break;
       }
 
       tokens.consume();
-      left = infixParselet.parse(this, tokens, left, next);
+      left = consequentParselet.parse(this, tokens, left, next);
     }
 
     return left;
@@ -110,14 +110,14 @@ export abstract class AbstractParser {
 }
 
 export class Parser extends AbstractParser {
-  prefixMap() {
+  initialMap() {
     return {
       NUMBER: new Parselet.NumberParselet(),
       '(': new Parselet.ParenParselet(),
     };
   }
 
-  infixMap() {
+  consequentMap() {
     return {
       '+': new Parselet.BinaryOperatorParselet('+', 'left'),
       '-': new Parselet.BinaryOperatorParselet('-', 'left'),

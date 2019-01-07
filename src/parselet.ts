@@ -4,11 +4,11 @@ import * as AST from './ast';
 import { AbstractParser } from './parser';
 import {token2pos, join} from './position'
 
-export interface PrefixParselet {
+export interface InitialParselet {
   parse(parser: AbstractParser, tokens: TokenStream, token: Token): AST.Node;
 }
 
-export class NumberParselet implements PrefixParselet {
+export class NumberParselet implements InitialParselet {
   parse(_parser: AbstractParser, _tokens: TokenStream, token: Token) {
     return {
       type: 'Number' as 'Number',
@@ -18,7 +18,7 @@ export class NumberParselet implements PrefixParselet {
   }
 }
 
-export class BooleanParselet implements PrefixParselet {
+export class BooleanParselet implements InitialParselet {
   constructor(private value: boolean) {}
   parse(_parser: AbstractParser, _tokens: TokenStream, token: Token) {
     return {
@@ -29,7 +29,7 @@ export class BooleanParselet implements PrefixParselet {
   }
 }
 
-export class ParenParselet implements PrefixParselet {
+export class ParenParselet implements InitialParselet {
   parse(parser: AbstractParser, tokens: TokenStream, _token: Token) {
     const exp = parser.parse(tokens, 0);
     tokens.expectToken(')');
@@ -38,7 +38,7 @@ export class ParenParselet implements PrefixParselet {
   }
 }
 
-export abstract class InfixParselet {
+export abstract class ConsequentParselet {
   constructor(
     readonly tokenType: TokenType,
     readonly associativity: 'left' | 'right'
@@ -51,7 +51,7 @@ export abstract class InfixParselet {
   ): AST.Node;
 }
 
-export class BinaryOperatorParselet extends InfixParselet {
+export class BinaryOperatorParselet extends ConsequentParselet {
   constructor(
     public tokenType: BinaryOperationTokenType,
     associativity: 'left' | 'right'
