@@ -13,6 +13,8 @@ document.body.appendChild(outputContainer);
 
 function updateOutput() {
   const ast = parse(cm.getDoc().getValue());
+  cm.setOption('script-errors', ast.errors);
+
   const tokens = getTokens(cm.getDoc().getValue());
   outputContainer.innerHTML = `\
 ast: ${JSON.stringify(ast, null, 2)}

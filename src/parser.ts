@@ -4,7 +4,7 @@ import {TokenStream} from './tokenstream';
 import {ParseError, token2pos} from './position';
 import * as AST from './ast';
 
-export function parse(text: string): {nodes: AST.Node[]; errors: string[]} {
+export function parse(text: string): {nodes: AST.Node[]; errors: ParseError[]} {
   const nodes: AST.Node[] = [];
 
   const tokens = new TokenStream(text);
@@ -15,7 +15,7 @@ export function parse(text: string): {nodes: AST.Node[]; errors: string[]} {
     } catch (e) {
       return {
         nodes,
-        errors: [e.message],
+        errors: [e],
       };
     }
   }

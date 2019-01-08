@@ -62,4 +62,4 @@ function assertUnreachable(x: never): never {
   throw new Error(`Didn't expect to get here ${x}`);
 }
 
-CM.defineMode('test', MakeMode);
+CM.defineMode('myMode', MakeMode);

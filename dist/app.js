@@ -17,6 +17,7 @@ outputContainer.className = 'output-container';
 document.body.appendChild(outputContainer);
 function updateOutput() {
     const ast = parser_1.parse(cm.getDoc().getValue());
+    cm.setOption('script-errors', ast.errors);
     const tokens = lexer_1.getTokens(cm.getDoc().getValue());
     outputContainer.innerHTML = `\
 ast: ${JSON.stringify(ast, null, 2)}
@@ -415,23 +416,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const codemirror_1 = __importDefault(require("codemirror"));
-require("../node_modules/codemirror/lib/codemirror.css");
+require("codemirror/lib/codemirror.css");
+require("codemirror/addon/lint/lint");
+require("codemirror/addon/lint/lint.css");
 require("./mode");
 function create(node) {
     const editor = codemirror_1.default(node, {
         value: '1 + (2 + 3) / 4',
-        mode: 'test',
+        mode: 'myMode',
+        gutters: ['CodeMirror-lint-markers'],
+        lint: true,
         lineWrapping: true
+    });
+    codemirror_1.default.registerHelper('lint', 'myMode', () => {
+        const parseErrors = editor.getOption('script-errors') || [];
+        return parseErrors.map((e) => ({
+            from: codemirror_1.default.Pos(e.position.first_line - 1, e.position.first_column),
+            to: codemirror_1.default.Pos(e.position.last_line - 1, e.position.last_column),
+            message: e.message,
+            severity: 'error'
+        }));
     });
     return editor;
 }
 exports.create = create;
 
-});
-___scope___.file("node_modules/codemirror/lib/codemirror.css", function(exports, require, module, __filename, __dirname){
-
-
-require("fuse-box-css")("default/node_modules/codemirror/lib/codemirror.css", "/* BASICS */\n\n.CodeMirror {\n  /* Set height, width, borders, and global font properties here */\n  font-family: monospace;\n  height: 300px;\n  color: black;\n  direction: ltr;\n}\n\n/* PADDING */\n\n.CodeMirror-lines {\n  padding: 4px 0; /* Vertical padding around content */\n}\n.CodeMirror pre {\n  padding: 0 4px; /* Horizontal padding of content */\n}\n\n.CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {\n  background-color: white; /* The little square between H and V scrollbars */\n}\n\n/* GUTTER */\n\n.CodeMirror-gutters {\n  border-right: 1px solid #ddd;\n  background-color: #f7f7f7;\n  white-space: nowrap;\n}\n.CodeMirror-linenumbers {}\n.CodeMirror-linenumber {\n  padding: 0 3px 0 5px;\n  min-width: 20px;\n  text-align: right;\n  color: #999;\n  white-space: nowrap;\n}\n\n.CodeMirror-guttermarker { color: black; }\n.CodeMirror-guttermarker-subtle { color: #999; }\n\n/* CURSOR */\n\n.CodeMirror-cursor {\n  border-left: 1px solid black;\n  border-right: none;\n  width: 0;\n}\n/* Shown when moving in bi-directional text */\n.CodeMirror div.CodeMirror-secondarycursor {\n  border-left: 1px solid silver;\n}\n.cm-fat-cursor .CodeMirror-cursor {\n  width: auto;\n  border: 0 !important;\n  background: #7e7;\n}\n.cm-fat-cursor div.CodeMirror-cursors {\n  z-index: 1;\n}\n.cm-fat-cursor-mark {\n  background-color: rgba(20, 255, 20, 0.5);\n  -webkit-animation: blink 1.06s steps(1) infinite;\n  -moz-animation: blink 1.06s steps(1) infinite;\n  animation: blink 1.06s steps(1) infinite;\n}\n.cm-animate-fat-cursor {\n  width: auto;\n  border: 0;\n  -webkit-animation: blink 1.06s steps(1) infinite;\n  -moz-animation: blink 1.06s steps(1) infinite;\n  animation: blink 1.06s steps(1) infinite;\n  background-color: #7e7;\n}\n@-moz-keyframes blink {\n  0% {}\n  50% { background-color: transparent; }\n  100% {}\n}\n@-webkit-keyframes blink {\n  0% {}\n  50% { background-color: transparent; }\n  100% {}\n}\n@keyframes blink {\n  0% {}\n  50% { background-color: transparent; }\n  100% {}\n}\n\n/* Can style cursor different in overwrite (non-insert) mode */\n.CodeMirror-overwrite .CodeMirror-cursor {}\n\n.cm-tab { display: inline-block; text-decoration: inherit; }\n\n.CodeMirror-rulers {\n  position: absolute;\n  left: 0; right: 0; top: -50px; bottom: -20px;\n  overflow: hidden;\n}\n.CodeMirror-ruler {\n  border-left: 1px solid #ccc;\n  top: 0; bottom: 0;\n  position: absolute;\n}\n\n/* DEFAULT THEME */\n\n.cm-s-default .cm-header {color: blue;}\n.cm-s-default .cm-quote {color: #090;}\n.cm-negative {color: #d44;}\n.cm-positive {color: #292;}\n.cm-header, .cm-strong {font-weight: bold;}\n.cm-em {font-style: italic;}\n.cm-link {text-decoration: underline;}\n.cm-strikethrough {text-decoration: line-through;}\n\n.cm-s-default .cm-keyword {color: #708;}\n.cm-s-default .cm-atom {color: #219;}\n.cm-s-default .cm-number {color: #164;}\n.cm-s-default .cm-def {color: #00f;}\n.cm-s-default .cm-variable,\n.cm-s-default .cm-punctuation,\n.cm-s-default .cm-property,\n.cm-s-default .cm-operator {}\n.cm-s-default .cm-variable-2 {color: #05a;}\n.cm-s-default .cm-variable-3, .cm-s-default .cm-type {color: #085;}\n.cm-s-default .cm-comment {color: #a50;}\n.cm-s-default .cm-string {color: #a11;}\n.cm-s-default .cm-string-2 {color: #f50;}\n.cm-s-default .cm-meta {color: #555;}\n.cm-s-default .cm-qualifier {color: #555;}\n.cm-s-default .cm-builtin {color: #30a;}\n.cm-s-default .cm-bracket {color: #997;}\n.cm-s-default .cm-tag {color: #170;}\n.cm-s-default .cm-attribute {color: #00c;}\n.cm-s-default .cm-hr {color: #999;}\n.cm-s-default .cm-link {color: #00c;}\n\n.cm-s-default .cm-error {color: #f00;}\n.cm-invalidchar {color: #f00;}\n\n.CodeMirror-composing { border-bottom: 2px solid; }\n\n/* Default styles for common addons */\n\ndiv.CodeMirror span.CodeMirror-matchingbracket {color: #0b0;}\ndiv.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}\n.CodeMirror-matchingtag { background: rgba(255, 150, 0, .3); }\n.CodeMirror-activeline-background {background: #e8f2ff;}\n\n/* STOP */\n\n/* The rest of this file contains styles related to the mechanics of\n   the editor. You probably shouldn't touch them. */\n\n.CodeMirror {\n  position: relative;\n  overflow: hidden;\n  background: white;\n}\n\n.CodeMirror-scroll {\n  overflow: scroll !important; /* Things will break if this is overridden */\n  /* 30px is the magic margin used to hide the element's real scrollbars */\n  /* See overflow: hidden in .CodeMirror */\n  margin-bottom: -30px; margin-right: -30px;\n  padding-bottom: 30px;\n  height: 100%;\n  outline: none; /* Prevent dragging from highlighting the element */\n  position: relative;\n}\n.CodeMirror-sizer {\n  position: relative;\n  border-right: 30px solid transparent;\n}\n\n/* The fake, visible scrollbars. Used to force redraw during scrolling\n   before actual scrolling happens, thus preventing shaking and\n   flickering artifacts. */\n.CodeMirror-vscrollbar, .CodeMirror-hscrollbar, .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {\n  position: absolute;\n  z-index: 6;\n  display: none;\n}\n.CodeMirror-vscrollbar {\n  right: 0; top: 0;\n  overflow-x: hidden;\n  overflow-y: scroll;\n}\n.CodeMirror-hscrollbar {\n  bottom: 0; left: 0;\n  overflow-y: hidden;\n  overflow-x: scroll;\n}\n.CodeMirror-scrollbar-filler {\n  right: 0; bottom: 0;\n}\n.CodeMirror-gutter-filler {\n  left: 0; bottom: 0;\n}\n\n.CodeMirror-gutters {\n  position: absolute; left: 0; top: 0;\n  min-height: 100%;\n  z-index: 3;\n}\n.CodeMirror-gutter {\n  white-space: normal;\n  height: 100%;\n  display: inline-block;\n  vertical-align: top;\n  margin-bottom: -30px;\n}\n.CodeMirror-gutter-wrapper {\n  position: absolute;\n  z-index: 4;\n  background: none !important;\n  border: none !important;\n}\n.CodeMirror-gutter-background {\n  position: absolute;\n  top: 0; bottom: 0;\n  z-index: 4;\n}\n.CodeMirror-gutter-elt {\n  position: absolute;\n  cursor: default;\n  z-index: 4;\n}\n.CodeMirror-gutter-wrapper ::selection { background-color: transparent }\n.CodeMirror-gutter-wrapper ::-moz-selection { background-color: transparent }\n\n.CodeMirror-lines {\n  cursor: text;\n  min-height: 1px; /* prevents collapsing before first draw */\n}\n.CodeMirror pre {\n  /* Reset some styles that the rest of the page might have set */\n  -moz-border-radius: 0; -webkit-border-radius: 0; border-radius: 0;\n  border-width: 0;\n  background: transparent;\n  font-family: inherit;\n  font-size: inherit;\n  margin: 0;\n  white-space: pre;\n  word-wrap: normal;\n  line-height: inherit;\n  color: inherit;\n  z-index: 2;\n  position: relative;\n  overflow: visible;\n  -webkit-tap-highlight-color: transparent;\n  -webkit-font-variant-ligatures: contextual;\n  font-variant-ligatures: contextual;\n}\n.CodeMirror-wrap pre {\n  word-wrap: break-word;\n  white-space: pre-wrap;\n  word-break: normal;\n}\n\n.CodeMirror-linebackground {\n  position: absolute;\n  left: 0; right: 0; top: 0; bottom: 0;\n  z-index: 0;\n}\n\n.CodeMirror-linewidget {\n  position: relative;\n  z-index: 2;\n  padding: 0.1px; /* Force widget margins to stay inside of the container */\n}\n\n.CodeMirror-widget {}\n\n.CodeMirror-rtl pre { direction: rtl; }\n\n.CodeMirror-code {\n  outline: none;\n}\n\n/* Force content-box sizing for the elements where we expect it */\n.CodeMirror-scroll,\n.CodeMirror-sizer,\n.CodeMirror-gutter,\n.CodeMirror-gutters,\n.CodeMirror-linenumber {\n  -moz-box-sizing: content-box;\n  box-sizing: content-box;\n}\n\n.CodeMirror-measure {\n  position: absolute;\n  width: 100%;\n  height: 0;\n  overflow: hidden;\n  visibility: hidden;\n}\n\n.CodeMirror-cursor {\n  position: absolute;\n  pointer-events: none;\n}\n.CodeMirror-measure pre { position: static; }\n\ndiv.CodeMirror-cursors {\n  visibility: hidden;\n  position: relative;\n  z-index: 3;\n}\ndiv.CodeMirror-dragcursors {\n  visibility: visible;\n}\n\n.CodeMirror-focused div.CodeMirror-cursors {\n  visibility: visible;\n}\n\n.CodeMirror-selected { background: #d9d9d9; }\n.CodeMirror-focused .CodeMirror-selected { background: #d7d4f0; }\n.CodeMirror-crosshair { cursor: crosshair; }\n.CodeMirror-line::selection, .CodeMirror-line > span::selection, .CodeMirror-line > span > span::selection { background: #d7d4f0; }\n.CodeMirror-line::-moz-selection, .CodeMirror-line > span::-moz-selection, .CodeMirror-line > span > span::-moz-selection { background: #d7d4f0; }\n\n.cm-searching {\n  background-color: #ffa;\n  background-color: rgba(255, 255, 0, .4);\n}\n\n/* Used to force a border model for a node */\n.cm-force-border { padding-right: .1px; }\n\n@media print {\n  /* Hide the cursor when printing */\n  .CodeMirror div.CodeMirror-cursors {\n    visibility: hidden;\n  }\n}\n\n/* See issue #2901 */\n.cm-tab-wrap-hack:after { content: ''; }\n\n/* Help users use markselection to safely style text background */\nspan.CodeMirror-selectedtext { background: none; }\n")
 });
 ___scope___.file("src/mode.js", function(exports, require, module, __filename, __dirname){
 /* fuse:injection: */ var stream = require("stream").Stream;
@@ -485,7 +494,7 @@ exports.MakeMode = MakeMode;
 function assertUnreachable(x) {
     throw new Error(`Didn't expect to get here ${x}`);
 }
-CM.defineMode('test', MakeMode);
+CM.defineMode('myMode', MakeMode);
 
 });
 ___scope___.file("src/parser.js", function(exports, require, module, __filename, __dirname){
@@ -513,7 +522,7 @@ function parse(text) {
         catch (e) {
             return {
                 nodes,
-                errors: [e.message],
+                errors: [e],
             };
         }
     }
@@ -10462,6 +10471,272 @@ ___scope___.file("lib/codemirror.js", function(exports, require, module, __filen
 
 })));
 
+});
+___scope___.file("lib/codemirror.css", function(exports, require, module, __filename, __dirname){
+
+
+require("fuse-box-css")("codemirror/lib/codemirror.css", "/* BASICS */\n\n.CodeMirror {\n  /* Set height, width, borders, and global font properties here */\n  font-family: monospace;\n  height: 300px;\n  color: black;\n  direction: ltr;\n}\n\n/* PADDING */\n\n.CodeMirror-lines {\n  padding: 4px 0; /* Vertical padding around content */\n}\n.CodeMirror pre {\n  padding: 0 4px; /* Horizontal padding of content */\n}\n\n.CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {\n  background-color: white; /* The little square between H and V scrollbars */\n}\n\n/* GUTTER */\n\n.CodeMirror-gutters {\n  border-right: 1px solid #ddd;\n  background-color: #f7f7f7;\n  white-space: nowrap;\n}\n.CodeMirror-linenumbers {}\n.CodeMirror-linenumber {\n  padding: 0 3px 0 5px;\n  min-width: 20px;\n  text-align: right;\n  color: #999;\n  white-space: nowrap;\n}\n\n.CodeMirror-guttermarker { color: black; }\n.CodeMirror-guttermarker-subtle { color: #999; }\n\n/* CURSOR */\n\n.CodeMirror-cursor {\n  border-left: 1px solid black;\n  border-right: none;\n  width: 0;\n}\n/* Shown when moving in bi-directional text */\n.CodeMirror div.CodeMirror-secondarycursor {\n  border-left: 1px solid silver;\n}\n.cm-fat-cursor .CodeMirror-cursor {\n  width: auto;\n  border: 0 !important;\n  background: #7e7;\n}\n.cm-fat-cursor div.CodeMirror-cursors {\n  z-index: 1;\n}\n.cm-fat-cursor-mark {\n  background-color: rgba(20, 255, 20, 0.5);\n  -webkit-animation: blink 1.06s steps(1) infinite;\n  -moz-animation: blink 1.06s steps(1) infinite;\n  animation: blink 1.06s steps(1) infinite;\n}\n.cm-animate-fat-cursor {\n  width: auto;\n  border: 0;\n  -webkit-animation: blink 1.06s steps(1) infinite;\n  -moz-animation: blink 1.06s steps(1) infinite;\n  animation: blink 1.06s steps(1) infinite;\n  background-color: #7e7;\n}\n@-moz-keyframes blink {\n  0% {}\n  50% { background-color: transparent; }\n  100% {}\n}\n@-webkit-keyframes blink {\n  0% {}\n  50% { background-color: transparent; }\n  100% {}\n}\n@keyframes blink {\n  0% {}\n  50% { background-color: transparent; }\n  100% {}\n}\n\n/* Can style cursor different in overwrite (non-insert) mode */\n.CodeMirror-overwrite .CodeMirror-cursor {}\n\n.cm-tab { display: inline-block; text-decoration: inherit; }\n\n.CodeMirror-rulers {\n  position: absolute;\n  left: 0; right: 0; top: -50px; bottom: -20px;\n  overflow: hidden;\n}\n.CodeMirror-ruler {\n  border-left: 1px solid #ccc;\n  top: 0; bottom: 0;\n  position: absolute;\n}\n\n/* DEFAULT THEME */\n\n.cm-s-default .cm-header {color: blue;}\n.cm-s-default .cm-quote {color: #090;}\n.cm-negative {color: #d44;}\n.cm-positive {color: #292;}\n.cm-header, .cm-strong {font-weight: bold;}\n.cm-em {font-style: italic;}\n.cm-link {text-decoration: underline;}\n.cm-strikethrough {text-decoration: line-through;}\n\n.cm-s-default .cm-keyword {color: #708;}\n.cm-s-default .cm-atom {color: #219;}\n.cm-s-default .cm-number {color: #164;}\n.cm-s-default .cm-def {color: #00f;}\n.cm-s-default .cm-variable,\n.cm-s-default .cm-punctuation,\n.cm-s-default .cm-property,\n.cm-s-default .cm-operator {}\n.cm-s-default .cm-variable-2 {color: #05a;}\n.cm-s-default .cm-variable-3, .cm-s-default .cm-type {color: #085;}\n.cm-s-default .cm-comment {color: #a50;}\n.cm-s-default .cm-string {color: #a11;}\n.cm-s-default .cm-string-2 {color: #f50;}\n.cm-s-default .cm-meta {color: #555;}\n.cm-s-default .cm-qualifier {color: #555;}\n.cm-s-default .cm-builtin {color: #30a;}\n.cm-s-default .cm-bracket {color: #997;}\n.cm-s-default .cm-tag {color: #170;}\n.cm-s-default .cm-attribute {color: #00c;}\n.cm-s-default .cm-hr {color: #999;}\n.cm-s-default .cm-link {color: #00c;}\n\n.cm-s-default .cm-error {color: #f00;}\n.cm-invalidchar {color: #f00;}\n\n.CodeMirror-composing { border-bottom: 2px solid; }\n\n/* Default styles for common addons */\n\ndiv.CodeMirror span.CodeMirror-matchingbracket {color: #0b0;}\ndiv.CodeMirror span.CodeMirror-nonmatchingbracket {color: #a22;}\n.CodeMirror-matchingtag { background: rgba(255, 150, 0, .3); }\n.CodeMirror-activeline-background {background: #e8f2ff;}\n\n/* STOP */\n\n/* The rest of this file contains styles related to the mechanics of\n   the editor. You probably shouldn't touch them. */\n\n.CodeMirror {\n  position: relative;\n  overflow: hidden;\n  background: white;\n}\n\n.CodeMirror-scroll {\n  overflow: scroll !important; /* Things will break if this is overridden */\n  /* 30px is the magic margin used to hide the element's real scrollbars */\n  /* See overflow: hidden in .CodeMirror */\n  margin-bottom: -30px; margin-right: -30px;\n  padding-bottom: 30px;\n  height: 100%;\n  outline: none; /* Prevent dragging from highlighting the element */\n  position: relative;\n}\n.CodeMirror-sizer {\n  position: relative;\n  border-right: 30px solid transparent;\n}\n\n/* The fake, visible scrollbars. Used to force redraw during scrolling\n   before actual scrolling happens, thus preventing shaking and\n   flickering artifacts. */\n.CodeMirror-vscrollbar, .CodeMirror-hscrollbar, .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {\n  position: absolute;\n  z-index: 6;\n  display: none;\n}\n.CodeMirror-vscrollbar {\n  right: 0; top: 0;\n  overflow-x: hidden;\n  overflow-y: scroll;\n}\n.CodeMirror-hscrollbar {\n  bottom: 0; left: 0;\n  overflow-y: hidden;\n  overflow-x: scroll;\n}\n.CodeMirror-scrollbar-filler {\n  right: 0; bottom: 0;\n}\n.CodeMirror-gutter-filler {\n  left: 0; bottom: 0;\n}\n\n.CodeMirror-gutters {\n  position: absolute; left: 0; top: 0;\n  min-height: 100%;\n  z-index: 3;\n}\n.CodeMirror-gutter {\n  white-space: normal;\n  height: 100%;\n  display: inline-block;\n  vertical-align: top;\n  margin-bottom: -30px;\n}\n.CodeMirror-gutter-wrapper {\n  position: absolute;\n  z-index: 4;\n  background: none !important;\n  border: none !important;\n}\n.CodeMirror-gutter-background {\n  position: absolute;\n  top: 0; bottom: 0;\n  z-index: 4;\n}\n.CodeMirror-gutter-elt {\n  position: absolute;\n  cursor: default;\n  z-index: 4;\n}\n.CodeMirror-gutter-wrapper ::selection { background-color: transparent }\n.CodeMirror-gutter-wrapper ::-moz-selection { background-color: transparent }\n\n.CodeMirror-lines {\n  cursor: text;\n  min-height: 1px; /* prevents collapsing before first draw */\n}\n.CodeMirror pre {\n  /* Reset some styles that the rest of the page might have set */\n  -moz-border-radius: 0; -webkit-border-radius: 0; border-radius: 0;\n  border-width: 0;\n  background: transparent;\n  font-family: inherit;\n  font-size: inherit;\n  margin: 0;\n  white-space: pre;\n  word-wrap: normal;\n  line-height: inherit;\n  color: inherit;\n  z-index: 2;\n  position: relative;\n  overflow: visible;\n  -webkit-tap-highlight-color: transparent;\n  -webkit-font-variant-ligatures: contextual;\n  font-variant-ligatures: contextual;\n}\n.CodeMirror-wrap pre {\n  word-wrap: break-word;\n  white-space: pre-wrap;\n  word-break: normal;\n}\n\n.CodeMirror-linebackground {\n  position: absolute;\n  left: 0; right: 0; top: 0; bottom: 0;\n  z-index: 0;\n}\n\n.CodeMirror-linewidget {\n  position: relative;\n  z-index: 2;\n  padding: 0.1px; /* Force widget margins to stay inside of the container */\n}\n\n.CodeMirror-widget {}\n\n.CodeMirror-rtl pre { direction: rtl; }\n\n.CodeMirror-code {\n  outline: none;\n}\n\n/* Force content-box sizing for the elements where we expect it */\n.CodeMirror-scroll,\n.CodeMirror-sizer,\n.CodeMirror-gutter,\n.CodeMirror-gutters,\n.CodeMirror-linenumber {\n  -moz-box-sizing: content-box;\n  box-sizing: content-box;\n}\n\n.CodeMirror-measure {\n  position: absolute;\n  width: 100%;\n  height: 0;\n  overflow: hidden;\n  visibility: hidden;\n}\n\n.CodeMirror-cursor {\n  position: absolute;\n  pointer-events: none;\n}\n.CodeMirror-measure pre { position: static; }\n\ndiv.CodeMirror-cursors {\n  visibility: hidden;\n  position: relative;\n  z-index: 3;\n}\ndiv.CodeMirror-dragcursors {\n  visibility: visible;\n}\n\n.CodeMirror-focused div.CodeMirror-cursors {\n  visibility: visible;\n}\n\n.CodeMirror-selected { background: #d9d9d9; }\n.CodeMirror-focused .CodeMirror-selected { background: #d7d4f0; }\n.CodeMirror-crosshair { cursor: crosshair; }\n.CodeMirror-line::selection, .CodeMirror-line > span::selection, .CodeMirror-line > span > span::selection { background: #d7d4f0; }\n.CodeMirror-line::-moz-selection, .CodeMirror-line > span::-moz-selection, .CodeMirror-line > span > span::-moz-selection { background: #d7d4f0; }\n\n.cm-searching {\n  background-color: #ffa;\n  background-color: rgba(255, 255, 0, .4);\n}\n\n/* Used to force a border model for a node */\n.cm-force-border { padding-right: .1px; }\n\n@media print {\n  /* Hide the cursor when printing */\n  .CodeMirror div.CodeMirror-cursors {\n    visibility: hidden;\n  }\n}\n\n/* See issue #2901 */\n.cm-tab-wrap-hack:after { content: ''; }\n\n/* Help users use markselection to safely style text background */\nspan.CodeMirror-selectedtext { background: none; }\n")
+});
+___scope___.file("addon/lint/lint.js", function(exports, require, module, __filename, __dirname){
+
+// CodeMirror, copyright (c) by Marijn Haverbeke and others
+// Distributed under an MIT license: https://codemirror.net/LICENSE
+
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../../lib/codemirror"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../../lib/codemirror"], mod);
+  else // Plain browser env
+    mod(CodeMirror);
+})(function(CodeMirror) {
+  "use strict";
+  var GUTTER_ID = "CodeMirror-lint-markers";
+
+  function showTooltip(e, content) {
+    var tt = document.createElement("div");
+    tt.className = "CodeMirror-lint-tooltip";
+    tt.appendChild(content.cloneNode(true));
+    document.body.appendChild(tt);
+
+    function position(e) {
+      if (!tt.parentNode) return CodeMirror.off(document, "mousemove", position);
+      tt.style.top = Math.max(0, e.clientY - tt.offsetHeight - 5) + "px";
+      tt.style.left = (e.clientX + 5) + "px";
+    }
+    CodeMirror.on(document, "mousemove", position);
+    position(e);
+    if (tt.style.opacity != null) tt.style.opacity = 1;
+    return tt;
+  }
+  function rm(elt) {
+    if (elt.parentNode) elt.parentNode.removeChild(elt);
+  }
+  function hideTooltip(tt) {
+    if (!tt.parentNode) return;
+    if (tt.style.opacity == null) rm(tt);
+    tt.style.opacity = 0;
+    setTimeout(function() { rm(tt); }, 600);
+  }
+
+  function showTooltipFor(e, content, node) {
+    var tooltip = showTooltip(e, content);
+    function hide() {
+      CodeMirror.off(node, "mouseout", hide);
+      if (tooltip) { hideTooltip(tooltip); tooltip = null; }
+    }
+    var poll = setInterval(function() {
+      if (tooltip) for (var n = node;; n = n.parentNode) {
+        if (n && n.nodeType == 11) n = n.host;
+        if (n == document.body) return;
+        if (!n) { hide(); break; }
+      }
+      if (!tooltip) return clearInterval(poll);
+    }, 400);
+    CodeMirror.on(node, "mouseout", hide);
+  }
+
+  function LintState(cm, options, hasGutter) {
+    this.marked = [];
+    this.options = options;
+    this.timeout = null;
+    this.hasGutter = hasGutter;
+    this.onMouseOver = function(e) { onMouseOver(cm, e); };
+    this.waitingFor = 0
+  }
+
+  function parseOptions(_cm, options) {
+    if (options instanceof Function) return {getAnnotations: options};
+    if (!options || options === true) options = {};
+    return options;
+  }
+
+  function clearMarks(cm) {
+    var state = cm.state.lint;
+    if (state.hasGutter) cm.clearGutter(GUTTER_ID);
+    for (var i = 0; i < state.marked.length; ++i)
+      state.marked[i].clear();
+    state.marked.length = 0;
+  }
+
+  function makeMarker(labels, severity, multiple, tooltips) {
+    var marker = document.createElement("div"), inner = marker;
+    marker.className = "CodeMirror-lint-marker-" + severity;
+    if (multiple) {
+      inner = marker.appendChild(document.createElement("div"));
+      inner.className = "CodeMirror-lint-marker-multiple";
+    }
+
+    if (tooltips != false) CodeMirror.on(inner, "mouseover", function(e) {
+      showTooltipFor(e, labels, inner);
+    });
+
+    return marker;
+  }
+
+  function getMaxSeverity(a, b) {
+    if (a == "error") return a;
+    else return b;
+  }
+
+  function groupByLine(annotations) {
+    var lines = [];
+    for (var i = 0; i < annotations.length; ++i) {
+      var ann = annotations[i], line = ann.from.line;
+      (lines[line] || (lines[line] = [])).push(ann);
+    }
+    return lines;
+  }
+
+  function annotationTooltip(ann) {
+    var severity = ann.severity;
+    if (!severity) severity = "error";
+    var tip = document.createElement("div");
+    tip.className = "CodeMirror-lint-message-" + severity;
+    if (typeof ann.messageHTML != 'undefined') {
+        tip.innerHTML = ann.messageHTML;
+    } else {
+        tip.appendChild(document.createTextNode(ann.message));
+    }
+    return tip;
+  }
+
+  function lintAsync(cm, getAnnotations, passOptions) {
+    var state = cm.state.lint
+    var id = ++state.waitingFor
+    function abort() {
+      id = -1
+      cm.off("change", abort)
+    }
+    cm.on("change", abort)
+    getAnnotations(cm.getValue(), function(annotations, arg2) {
+      cm.off("change", abort)
+      if (state.waitingFor != id) return
+      if (arg2 && annotations instanceof CodeMirror) annotations = arg2
+      cm.operation(function() {updateLinting(cm, annotations)})
+    }, passOptions, cm);
+  }
+
+  function startLinting(cm) {
+    var state = cm.state.lint, options = state.options;
+    /*
+     * Passing rules in `options` property prevents JSHint (and other linters) from complaining
+     * about unrecognized rules like `onUpdateLinting`, `delay`, `lintOnChange`, etc.
+     */
+    var passOptions = options.options || options;
+    var getAnnotations = options.getAnnotations || cm.getHelper(CodeMirror.Pos(0, 0), "lint");
+    if (!getAnnotations) return;
+    if (options.async || getAnnotations.async) {
+      lintAsync(cm, getAnnotations, passOptions)
+    } else {
+      var annotations = getAnnotations(cm.getValue(), passOptions, cm);
+      if (!annotations) return;
+      if (annotations.then) annotations.then(function(issues) {
+        cm.operation(function() {updateLinting(cm, issues)})
+      });
+      else cm.operation(function() {updateLinting(cm, annotations)})
+    }
+  }
+
+  function updateLinting(cm, annotationsNotSorted) {
+    clearMarks(cm);
+    var state = cm.state.lint, options = state.options;
+
+    var annotations = groupByLine(annotationsNotSorted);
+
+    for (var line = 0; line < annotations.length; ++line) {
+      var anns = annotations[line];
+      if (!anns) continue;
+
+      var maxSeverity = null;
+      var tipLabel = state.hasGutter && document.createDocumentFragment();
+
+      for (var i = 0; i < anns.length; ++i) {
+        var ann = anns[i];
+        var severity = ann.severity;
+        if (!severity) severity = "error";
+        maxSeverity = getMaxSeverity(maxSeverity, severity);
+
+        if (options.formatAnnotation) ann = options.formatAnnotation(ann);
+        if (state.hasGutter) tipLabel.appendChild(annotationTooltip(ann));
+
+        if (ann.to) state.marked.push(cm.markText(ann.from, ann.to, {
+          className: "CodeMirror-lint-mark-" + severity,
+          __annotation: ann
+        }));
+      }
+
+      if (state.hasGutter)
+        cm.setGutterMarker(line, GUTTER_ID, makeMarker(tipLabel, maxSeverity, anns.length > 1,
+                                                       state.options.tooltips));
+    }
+    if (options.onUpdateLinting) options.onUpdateLinting(annotationsNotSorted, annotations, cm);
+  }
+
+  function onChange(cm) {
+    var state = cm.state.lint;
+    if (!state) return;
+    clearTimeout(state.timeout);
+    state.timeout = setTimeout(function(){startLinting(cm);}, state.options.delay || 500);
+  }
+
+  function popupTooltips(annotations, e) {
+    var target = e.target || e.srcElement;
+    var tooltip = document.createDocumentFragment();
+    for (var i = 0; i < annotations.length; i++) {
+      var ann = annotations[i];
+      tooltip.appendChild(annotationTooltip(ann));
+    }
+    showTooltipFor(e, tooltip, target);
+  }
+
+  function onMouseOver(cm, e) {
+    var target = e.target || e.srcElement;
+    if (!/\bCodeMirror-lint-mark-/.test(target.className)) return;
+    var box = target.getBoundingClientRect(), x = (box.left + box.right) / 2, y = (box.top + box.bottom) / 2;
+    var spans = cm.findMarksAt(cm.coordsChar({left: x, top: y}, "client"));
+
+    var annotations = [];
+    for (var i = 0; i < spans.length; ++i) {
+      var ann = spans[i].__annotation;
+      if (ann) annotations.push(ann);
+    }
+    if (annotations.length) popupTooltips(annotations, e);
+  }
+
+  CodeMirror.defineOption("lint", false, function(cm, val, old) {
+    if (old && old != CodeMirror.Init) {
+      clearMarks(cm);
+      if (cm.state.lint.options.lintOnChange !== false)
+        cm.off("change", onChange);
+      CodeMirror.off(cm.getWrapperElement(), "mouseover", cm.state.lint.onMouseOver);
+      clearTimeout(cm.state.lint.timeout);
+      delete cm.state.lint;
+    }
+
+    if (val) {
+      var gutters = cm.getOption("gutters"), hasLintGutter = false;
+      for (var i = 0; i < gutters.length; ++i) if (gutters[i] == GUTTER_ID) hasLintGutter = true;
+      var state = cm.state.lint = new LintState(cm, parseOptions(cm, val), hasLintGutter);
+      if (state.options.lintOnChange !== false)
+        cm.on("change", onChange);
+      if (state.options.tooltips != false && state.options.tooltips != "gutter")
+        CodeMirror.on(cm.getWrapperElement(), "mouseover", state.onMouseOver);
+
+      startLinting(cm);
+    }
+  });
+
+  CodeMirror.defineExtension("performLint", function() {
+    if (this.state.lint) startLinting(this);
+  });
+});
+
+});
+___scope___.file("addon/lint/lint.css", function(exports, require, module, __filename, __dirname){
+
+
+require("fuse-box-css")("codemirror/addon/lint/lint.css", "/* The lint marker gutter */\n.CodeMirror-lint-markers {\n  width: 16px;\n}\n\n.CodeMirror-lint-tooltip {\n  background-color: #ffd;\n  border: 1px solid black;\n  border-radius: 4px 4px 4px 4px;\n  color: black;\n  font-family: monospace;\n  font-size: 10pt;\n  overflow: hidden;\n  padding: 2px 5px;\n  position: fixed;\n  white-space: pre;\n  white-space: pre-wrap;\n  z-index: 100;\n  max-width: 600px;\n  opacity: 0;\n  transition: opacity .4s;\n  -moz-transition: opacity .4s;\n  -webkit-transition: opacity .4s;\n  -o-transition: opacity .4s;\n  -ms-transition: opacity .4s;\n}\n\n.CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {\n  background-position: left bottom;\n  background-repeat: repeat-x;\n}\n\n.CodeMirror-lint-mark-error {\n  background-image:\n  url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJDw4cOCW1/KIAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAHElEQVQI12NggIL/DAz/GdA5/xkY/qPKMDAwAADLZwf5rvm+LQAAAABJRU5ErkJggg==\")\n  ;\n}\n\n.CodeMirror-lint-mark-warning {\n  background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJFhQXEbhTg7YAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAMklEQVQI12NkgIIvJ3QXMjAwdDN+OaEbysDA4MPAwNDNwMCwiOHLCd1zX07o6kBVGQEAKBANtobskNMAAAAASUVORK5CYII=\");\n}\n\n.CodeMirror-lint-marker-error, .CodeMirror-lint-marker-warning {\n  background-position: center center;\n  background-repeat: no-repeat;\n  cursor: pointer;\n  display: inline-block;\n  height: 16px;\n  width: 16px;\n  vertical-align: middle;\n  position: relative;\n}\n\n.CodeMirror-lint-message-error, .CodeMirror-lint-message-warning {\n  padding-left: 18px;\n  background-position: top left;\n  background-repeat: no-repeat;\n}\n\n.CodeMirror-lint-marker-error, .CodeMirror-lint-message-error {\n  background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAHlBMVEW7AAC7AACxAAC7AAC7AAAAAAC4AAC5AAD///+7AAAUdclpAAAABnRSTlMXnORSiwCK0ZKSAAAATUlEQVR42mWPOQ7AQAgDuQLx/z8csYRmPRIFIwRGnosRrpamvkKi0FTIiMASR3hhKW+hAN6/tIWhu9PDWiTGNEkTtIOucA5Oyr9ckPgAWm0GPBog6v4AAAAASUVORK5CYII=\");\n}\n\n.CodeMirror-lint-marker-warning, .CodeMirror-lint-message-warning {\n  background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAANlBMVEX/uwDvrwD/uwD/uwD/uwD/uwD/uwD/uwD/uwD6twD/uwAAAADurwD2tQD7uAD+ugAAAAD/uwDhmeTRAAAADHRSTlMJ8mN1EYcbmiixgACm7WbuAAAAVklEQVR42n3PUQqAIBBFUU1LLc3u/jdbOJoW1P08DA9Gba8+YWJ6gNJoNYIBzAA2chBth5kLmG9YUoG0NHAUwFXwO9LuBQL1giCQb8gC9Oro2vp5rncCIY8L8uEx5ZkAAAAASUVORK5CYII=\");\n}\n\n.CodeMirror-lint-marker-multiple {\n  background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAMAAADzjKfhAAAACVBMVEUAAAAAAAC/v7914kyHAAAAAXRSTlMAQObYZgAAACNJREFUeNo1ioEJAAAIwmz/H90iFFSGJgFMe3gaLZ0od+9/AQZ0ADosbYraAAAAAElFTkSuQmCC\");\n  background-repeat: no-repeat;\n  background-position: right bottom;\n  width: 100%; height: 100%;\n}\n")
 });
 return ___scope___.entry = "lib/codemirror.js";
 });
