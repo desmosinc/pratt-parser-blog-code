@@ -1,6 +1,7 @@
 import * as Parselet from './parselet';
-import {TokenType} from './lexer';
+import {Token, TokenType} from './lexer';
 import {TokenStream} from './tokenstream';
+import {ParseError, token2pos} from './position';
 import * as AST from './ast';
 
 export function parse(text: string): {nodes: AST.Node[]; errors: string[]} {
@@ -53,12 +54,13 @@ export abstract class AbstractParser {
     }
   }
 
-  bindingPower(tokenType: TokenType): number {
-    if (this.bindingPowers[tokenType] != undefined) {
-      return this.bindingPowers[tokenType];
+  bindingPower(token: Token): number {
+    if (this.bindingPowers[token.type] != undefined) {
+      return this.bindingPowers[token.type];
     } else {
-      throw new Error(
-        `Tried to parse token type ${tokenType} with a parser that does not have it defined.`,
+      throw new ParseError(
+        `Unexpected token type ${token.type}.`,
+        token2pos(token),
       );
     }
   }
@@ -66,20 +68,18 @@ export abstract class AbstractParser {
   parse(tokens: TokenStream, currentBindingPower: number): AST.Node {
     const token = tokens.consume();
     if (!token) {
-      throw new Error(
-        `Expected a start of an expression but ran out of tokens: ${JSON.stringify(
-          tokens.last(),
-        )}`,
+      throw new ParseError(
+        `Unexpected end of tokens.`,
+        token2pos(tokens.last()),
       );
     }
 
     const initialParselet = this.initialMap()[token.type];
 
     if (!initialParselet) {
-      throw new Error(
-        `Expected a start of an expression but found "${
-          token.text
-        }": ${JSON.stringify(token)}`,
+      throw new ParseError(
+        `Unexpected token type ${token.type}`,
+        token2pos(token),
       );
     }
 
@@ -97,7 +97,7 @@ export abstract class AbstractParser {
         break;
       }
 
-      if (currentBindingPower >= this.bindingPower(next.type)) {
+      if (currentBindingPower >= this.bindingPower(next)) {
         break;
       }
 
@@ -128,11 +128,7 @@ export class Parser extends AbstractParser {
   }
 
   bindingClasses() {
-    const classes: TokenType[][] = [
-      ['+', '-'],
-      ['*', '/'],
-      ['^']
-    ];
+    const classes: TokenType[][] = [['+', '-'], ['*', '/'], ['^']];
     return classes;
   }
 }

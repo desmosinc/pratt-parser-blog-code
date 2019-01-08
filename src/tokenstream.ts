@@ -1,4 +1,5 @@
 import {Token, TokenType, getTokens} from './lexer';
+import {ParseError, token2pos} from './position';
 
 export class TokenStream {
   tokens: Token[];
@@ -28,18 +29,16 @@ export class TokenStream {
     const actual = this.consume();
 
     if (!actual) {
-      throw new Error(
-        `Expected _${expectedType}_ token but found none. ${JSON.stringify(
-          this.last(),
-        )}`,
+      throw new ParseError(
+        `Expected "${expectedType}" token but found none.`,
+        token2pos(this.last()),
       );
     }
 
     if (actual.type != expectedType) {
-      throw new Error(
-        `Expected _${expectedType}_ token but found _${
-          actual.type
-        }_. ${JSON.stringify(actual)}`,
+      throw new ParseError(
+        `Expected "${expectedType}" token type but found "${actual.type}".`,
+        token2pos(actual),
       );
     }
 

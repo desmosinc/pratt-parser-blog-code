@@ -63,13 +63,13 @@ export class BinaryOperatorParselet extends ConsequentParselet {
     parser: AbstractParser,
     tokens: TokenStream,
     left: AST.Node,
-    _token: Token
+    token: Token
   ): AST.Node {
-    const precedence = parser.bindingPower(this.tokenType);
+    const bindingPower = parser.bindingPower(token);
 
     const right = parser.parse(
       tokens,
-      this.associativity == 'left' ? precedence : precedence - 1
+      this.associativity == 'left' ? bindingPower : bindingPower - 1
     );
 
     return {

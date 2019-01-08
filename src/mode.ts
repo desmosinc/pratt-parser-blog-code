@@ -38,12 +38,7 @@ export function MakeMode(_config: CodeMirror.EditorConfiguration, _modeOptions?:
         case '-':
         case '*':
         case '/':
-        case '=':
         case '^':
-        case '>=':
-        case '<=':
-        case '>':
-        case '<':
           return 'operator';
 
         case 'COMMENT':

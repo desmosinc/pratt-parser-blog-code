@@ -465,12 +465,7 @@ function MakeMode(_config, _modeOptions) {
                 case '-':
                 case '*':
                 case '/':
-                case '=':
                 case '^':
-                case '>=':
-                case '<=':
-                case '>':
-                case '<':
                     return 'operator';
                 case 'COMMENT':
                     return 'comment';
@@ -506,6 +501,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const Parselet = __importStar(require("./parselet"));
 const tokenstream_1 = require("./tokenstream");
+const position_1 = require("./position");
 function parse(text) {
     const nodes = [];
     const tokens = new tokenstream_1.TokenStream(text);
@@ -540,22 +536,22 @@ class AbstractParser {
             }
         }
     }
-    bindingPower(tokenType) {
-        if (this.bindingPowers[tokenType] != undefined) {
-            return this.bindingPowers[tokenType];
+    bindingPower(token) {
+        if (this.bindingPowers[token.type] != undefined) {
+            return this.bindingPowers[token.type];
         }
         else {
-            throw new Error(`Tried to parse token type ${tokenType} with a parser that does not have it defined.`);
+            throw new position_1.ParseError(`Unexpected token type ${token.type}.`, position_1.token2pos(token));
         }
     }
     parse(tokens, currentBindingPower) {
         const token = tokens.consume();
         if (!token) {
-            throw new Error(`Expected a start of an expression but ran out of tokens: ${JSON.stringify(tokens.last())}`);
+            throw new position_1.ParseError(`Unexpected end of tokens.`, position_1.token2pos(tokens.last()));
         }
         const initialParselet = this.initialMap()[token.type];
         if (!initialParselet) {
-            throw new Error(`Expected a start of an expression but found "${token.text}": ${JSON.stringify(token)}`);
+            throw new position_1.ParseError(`Unexpected token type ${token.type}`, position_1.token2pos(token));
         }
         let left = initialParselet.parse(this, tokens, token);
         while (true) {
@@ -567,7 +563,7 @@ class AbstractParser {
             if (!consequentParselet) {
                 break;
             }
-            if (currentBindingPower >= this.bindingPower(next.type)) {
+            if (currentBindingPower >= this.bindingPower(next)) {
                 break;
             }
             tokens.consume();
@@ -594,11 +590,7 @@ class Parser extends AbstractParser {
         };
     }
     bindingClasses() {
-        const classes = [
-            ['+', '-'],
-            ['*', '/'],
-            ['^']
-        ];
+        const classes = [['+', '-'], ['*', '/'], ['^']];
         return classes;
     }
 }
@@ -653,9 +645,9 @@ class BinaryOperatorParselet extends ConsequentParselet {
         super(tokenType, associativity);
         this.tokenType = tokenType;
     }
-    parse(parser, tokens, left, _token) {
-        const precedence = parser.bindingPower(this.tokenType);
-        const right = parser.parse(tokens, this.associativity == 'left' ? precedence : precedence - 1);
+    parse(parser, tokens, left, token) {
+        const bindingPower = parser.bindingPower(token);
+        const right = parser.parse(tokens, this.associativity == 'left' ? bindingPower : bindingPower - 1);
         return {
             type: 'BinaryOperation',
             operator: this.tokenType,
@@ -690,6 +682,15 @@ function join(start, end) {
     };
 }
 exports.join = join;
+// note, extending Error in the browser is problematic
+// https://stackoverflow.com/questions/33870684/why-doesnt-instanceof-work-on-instances-of-error-subclasses-under-babel-node
+class ParseError {
+    constructor(message, position) {
+        this.message = message;
+        this.position = position;
+    }
+}
+exports.ParseError = ParseError;
 
 });
 ___scope___.file("src/tokenstream.js", function(exports, require, module, __filename, __dirname){
@@ -697,6 +698,7 @@ ___scope___.file("src/tokenstream.js", function(exports, require, module, __file
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const lexer_1 = require("./lexer");
+const position_1 = require("./position");
 class TokenStream {
     constructor(text) {
         this.pos = 0;
@@ -718,10 +720,10 @@ class TokenStream {
     expectToken(expectedType) {
         const actual = this.consume();
         if (!actual) {
-            throw new Error(`Expected _${expectedType}_ token but found none. ${JSON.stringify(this.last())}`);
+            throw new position_1.ParseError(`Expected "${expectedType}" token but found none.`, position_1.token2pos(this.last()));
         }
         if (actual.type != expectedType) {
-            throw new Error(`Expected _${expectedType}_ token but found _${actual.type}_. ${JSON.stringify(actual)}`);
+            throw new position_1.ParseError(`Expected "${expectedType}" token type but found "${actual.type}".`, position_1.token2pos(actual));
         }
         return actual;
     }

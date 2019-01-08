@@ -3,6 +3,7 @@
     "target": "es6",
     "module": "commonjs",
     "outDir": "./build",
+    "noEmit": true,
     "strict": true,
 
     "noUnusedLocals": true,

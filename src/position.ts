@@ -24,3 +24,9 @@ export function join(start: Position, end: Position) {
     last_column: end.last_column
   };
 }
+
+// note, extending Error in the browser is problematic
+// https://stackoverflow.com/questions/33870684/why-doesnt-instanceof-work-on-instances-of-error-subclasses-under-babel-node
+export class ParseError {
+  constructor(public message: string, public position: Position) {}
+}
