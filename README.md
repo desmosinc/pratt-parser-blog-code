@@ -8,6 +8,10 @@ For more details, see this [blog post on the Desmos engineering blog](https://en
 
 Hopefully this will serve as a nice starting point for anyone interested in building a web-based language. Enjoy!
 
+# Online
+
+You can play with the parser online [on the github page](https://desmosinc.github.io/pratt-parser-blog-code/)
+
 # Setup
 
 Clone the repo, then run
